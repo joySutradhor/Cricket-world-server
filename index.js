@@ -29,6 +29,19 @@ async function run() {
     // await client.connect();
     const classesCollection = client.db("cricket").collection("classes");
     const studentClassCollection = client.db("cricket").collection("studentClass");
+    const usersCollection = client.db("cricket").collection("users");
+
+    // users collectons 
+    app.post("/users" , async (req , res ) => {
+      const user = req.body ;
+      const quary = {email : user.email};
+      const existUser = await usersCollection.findOne(quary) ;
+      if(existUser) {
+        return res.send({message : "already have user"})
+      }
+      const result = await usersCollection.insertOne(user) ;
+      res.send(result)
+    })
 
     app.get("/classes" , async (req , res) => {
         const quary = {} ;
