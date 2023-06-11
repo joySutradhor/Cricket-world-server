@@ -32,6 +32,12 @@ async function run() {
     const usersCollection = client.db("cricket").collection("users");
 
     // users collectons 
+    app.get("/users" , async (req , res ) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result) ;
+    })
+
+
     app.post("/users" , async (req , res ) => {
       const user = req.body ;
       const quary = {email : user.email};
