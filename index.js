@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express() ;
-const cors = require('cors')
+const cors = require('cors') ;
+const jwt = require('jsonwebtoken');
 require('dotenv').config()
 const port = process.env.PORT || 5000 ;
 
@@ -31,11 +32,37 @@ async function run() {
     const studentClassCollection = client.db("cricket").collection("studentClass");
     const usersCollection = client.db("cricket").collection("users");
 
+
+    app.post("/jwt" , (req , res) => {
+      const user = req.body ;
+      const token = jwt.sign(user , process.env.ACCESS_TOKEN , {expiresIn : "23h"}) 
+      res.send({token})
+    })
     // users collectons 
     app.get("/users" , async (req , res ) => {
       const result = await usersCollection.find().toArray();
       res.send(result) ;
     })
+
+    app.get("/users/role/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      let role;
+      if (user.role === "admin") {
+        role = "admin";
+      } else if (user.role === "instructor") {
+        role = "instructor";
+      } else {
+        role = "student";
+      }
+
+      res.json({ email: email, role: role });
+    });
 
 
     app.post("/users" , async (req , res ) => {
@@ -46,6 +73,29 @@ async function run() {
         return res.send({message : "already have user"})
       }
       const result = await usersCollection.insertOne(user) ;
+      res.send(result)
+    })
+
+    app.patch("/users/admin/:id" , async(req , res) => {
+      const id = req.params.id ;
+      const filter = {_id : new ObjectId(id)} ;
+      const updateDoc = {
+        $set: {
+          role : 'admin'
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result)
+    })
+    app.patch("/users/instructor/:id" , async(req , res) => {
+      const id = req.params.id ;
+      const filter = {_id : new ObjectId(id)} ;
+      const updateDoc = {
+        $set: {
+          role : 'instructor'
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result)
     })
 
