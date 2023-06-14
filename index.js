@@ -1,9 +1,9 @@
 const express = require('express');
-const app = express() ;
-const cors = require('cors') ;
+const app = express();
+const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config()
-const port = process.env.PORT || 5000 ;
+const port = process.env.PORT || 5000;
 
 // middleware 
 app.use(cors())
@@ -33,15 +33,11 @@ async function run() {
     const usersCollection = client.db("cricket").collection("users");
 
 
-    app.post("/jwt" , (req , res) => {
-      const user = req.body ;
-      const token = jwt.sign(user , process.env.ACCESS_TOKEN , {expiresIn : "23h"}) 
-      res.send({token})
-    })
+
     // users collectons 
-    app.get("/users" , async (req , res ) => {
+    app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
-      res.send(result) ;
+      res.send(result);
     })
 
     app.get("/users/role/:email", async (req, res) => {
@@ -65,65 +61,114 @@ async function run() {
     });
 
 
-    app.post("/users" , async (req , res ) => {
-      const user = req.body ;
-      const quary = {email : user.email};
-      const existUser = await usersCollection.findOne(quary) ;
-      if(existUser) {
-        return res.send({message : "already have user"})
+    app.get("/classes/approved" , async(req , res) => {
+      const role = "approved" ;
+      const query = {role : role}
+      const approvedClass = await classesCollection.find(query).toArray()
+      res.send(approvedClass)
+    })
+
+
+
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const quary = { email: user.email };
+      const existUser = await usersCollection.findOne(quary);
+      if (existUser) {
+        return res.send({ message: "already have user" })
       }
-      const result = await usersCollection.insertOne(user) ;
+      const result = await usersCollection.insertOne(user);
       res.send(result)
     })
 
-    app.patch("/users/admin/:id" , async(req , res) => {
-      const id = req.params.id ;
-      const filter = {_id : new ObjectId(id)} ;
+    app.patch("/users/admin/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
-          role : 'admin'
-        },
-      };
-      const result = await usersCollection.updateOne(filter, updateDoc);
-      res.send(result)
-    })
-    app.patch("/users/instructor/:id" , async(req , res) => {
-      const id = req.params.id ;
-      const filter = {_id : new ObjectId(id)} ;
-      const updateDoc = {
-        $set: {
-          role : 'instructor'
+          role: 'admin'
         },
       };
       const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result)
     })
 
-    app.get("/classes" , async (req , res) => {
-        const quary = {} ;
-        const options = {
-            sort: { availableSeats : -1 },
-          };
-        const result = await classesCollection.find(quary ,options).limit(6).toArray();
-        res.send(result)
-    })
-
-    app.post("/studentsClass" , async(req , res ) => {
-      const studenClass = req.body ;
-      const result = await studentClassCollection.insertOne(studenClass) ;
+    app.patch("/users/instructor/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: 'instructor'
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result)
     })
 
-    app.get("/studentsClass" , async (req , res) => {
+
+    // admin manage class 
+
+    app.patch("/classes/approved/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: 'approved'
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateDoc);
+      res.send(result)
+    })
+    app.patch("/classes/deny/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: 'deny'
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateDoc);
+      res.send(result)
+    })
+
+
+
+
+
+    // instructor added classes 
+
+    app.get("/classes", async (req, res) => {
+      const quary = {};
+      const options = {
+        sort: { seat: -1 },
+      };
+      const result = await classesCollection.find(quary, options).limit(6).toArray();
+      res.send(result)
+    })
+
+    app.post("/classes", async (req, res) => {
+      const studenClass = req.body;
+      const result = await classesCollection.insertOne(studenClass);
+      res.send(result)
+    })
+
+    // student added class
+    app.post("/studentsClass", async (req, res) => {
+      const studenClass = req.body;
+      const result = await studentClassCollection.insertOne(studenClass);
+      res.send(result)
+    })
+
+    app.get("/studentsClass", async (req, res) => {
       const result = await studentClassCollection.find().toArray();
       res.send(result)
     })
 
-    app.delete("/studentsClass/:id" , async(req, res) => {
-      const id = req.params.id ;
+    app.delete("/studentsClass/:id", async (req, res) => {
+      const id = req.params.id;
       console.log(id)
-      const query = {_id : new ObjectId(id)} ;
-      const result = await studentClassCollection.deleteOne(query) ;
+      const query = { _id: new ObjectId(id) };
+      const result = await studentClassCollection.deleteOne(query);
       res.send(result)
     })
 
@@ -139,10 +184,10 @@ run().catch(console.dir);
 
 
 
-app.get("/" , (req , res) => {
-    res.send("cricket is runiing")
+app.get("/", (req, res) => {
+  res.send("cricket is runiing")
 })
 
-app.listen(port , () => {
-    console.log("server is running")
+app.listen(port, () => {
+  console.log("server is running")
 })
